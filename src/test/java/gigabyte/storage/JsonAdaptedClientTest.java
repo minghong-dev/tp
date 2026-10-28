@@ -20,7 +20,7 @@ import gigabyte.model.client.Phone;
 import gigabyte.model.tag.Tag;
 
 public class JsonAdaptedClientTest {
-    private static final String INVALID_NAME = "R@chel";
+    private static final String INVALID_NAME = "R#chel";
     private static final String INVALID_PHONE = "+651234";
     private static final String INVALID_ADDRESS = " ";
     private static final String INVALID_EMAIL = "example.com";
@@ -78,6 +78,21 @@ public class JsonAdaptedClientTest {
                 new JsonAdaptedClient(VALID_UID, INVALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
         String expectedMessage = Name.MESSAGE_CONSTRAINTS;
         assertThrows(IllegalValueException.class, expectedMessage, client::toModelType);
+    }
+
+    @Test
+    public void toModelType_nameWithAllowedPunctuation_returnsClient() throws Exception {
+        String name = "Raj A/L Kumar & Co (O'Brien-Tan), Pte. Ltd. @ Bedok";
+        JsonAdaptedClient client =
+                new JsonAdaptedClient(VALID_UID, name, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+        assertEquals(new Name(name), client.toModelType().getName());
+    }
+
+    @Test
+    public void toModelType_nameStartingWithPunctuation_throwsIllegalValueException() {
+        JsonAdaptedClient client =
+                new JsonAdaptedClient(VALID_UID, "'Brien", VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+        assertThrows(IllegalValueException.class, Name.MESSAGE_CONSTRAINTS, client::toModelType);
     }
 
     @Test

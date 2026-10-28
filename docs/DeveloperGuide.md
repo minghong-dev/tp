@@ -1276,6 +1276,42 @@ Start each test in this section from a fresh test folder.
    1. Test case: `exit`<br>
       Expected: Gigabyte closes. Relaunching it from the same folder restores the client changes made above.
 
+### Client names and gig titles that contain a prefix
+
+Start this section from a fresh test folder. Client 1 is `Alex Yeoh`, with the address
+`Blk 30 Geylang Street 29, #06-40` and the tag `friends`. Alex's gig 2 is `Product launch photography`, with a fee
+of `$1200.00`.
+
+1. **Names with punctuation**
+   1. Test case: `add n/O'Brien & Co (Pte. Ltd.) p/81234567 e/obrien@example.com a/1 Main Street`<br>
+      Expected: The client is added with the full name `O'Brien & Co (Pte. Ltd.)`.
+   1. Test case: `add n/-Jane p/81234567 e/jane@example.com a/1 Main Street`<br>
+      Expected: No client is added. The error says that names must start with a letter or digit and lists the
+      allowed characters.
+
+1. **Upper-case workaround for names**
+   1. Test case: `edit 1 n/Raj A/L Kumar`<br>
+      Expected: Only the name changes, to `Raj A/L Kumar`. The address stays `Blk 30 Geylang Street 29, #06-40` and
+      the tag stays `friends`.
+   1. Test case: `edit 1 n/Lee T/A Shop`<br>
+      Expected: Only the name changes, to `Lee T/A Shop`. The address and tag are unchanged.
+
+1. **Known limitation: lower-case prefix in a name**<br>
+   These cases record current behaviour, described in the User Guide's
+   [Names and titles that contain a prefix](UserGuide.html#names-and-titles-that-contain-a-prefix).
+   1. Test case: `edit 1 n/Raj a/l Kumar`<br>
+      Expected: The edit is saved without an error. The name becomes `Raj` and the address becomes `l Kumar`.
+   1. Test case: `edit 1 n/Lee t/a`<br>
+      Expected: The edit is saved without an error. The name becomes `Lee` and the only tag is `a`.
+
+1. **Gig titles that contain a prefix**
+   1. Test case: `editgig 1 2 t/Launch shoot F/2.8`<br>
+      Expected: Only the title changes, to `Launch shoot F/2.8`. The fee stays `$1200.00`.
+   1. Test case (known limitation): `editgig 1 2 t/Launch shoot f/2.8`<br>
+      Expected: The edit is saved without an error. The title becomes `Launch shoot` and the fee becomes `$2.80`.
+   1. Test case (known limitation): `editgig 1 2 t/Fix s/w bug`<br>
+      Expected: The command-format error is shown, because `editgig` does not accept `s/`. Nothing changes.
+
 ### Adding payment obligations
 
 Start this section from a fresh test folder. Alex's sample gigs make `CLIENT_INDEX 1` and `GIG_INDEX 1` valid.

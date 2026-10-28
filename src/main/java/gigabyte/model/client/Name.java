@@ -9,14 +9,15 @@ import static java.util.Objects.requireNonNull;
  */
 public class Name {
 
-    public static final String MESSAGE_CONSTRAINTS =
-            "Names should only contain alphanumeric characters and spaces, and should not be blank";
+    public static final String MESSAGE_CONSTRAINTS = "Names should start with a letter or digit, and should only "
+            + "contain letters, digits, spaces and these characters: ' - . , & / ( ) @";
 
     /*
-     * The first character of the name must not be a whitespace,
-     * otherwise " " (a blank string) becomes a valid input.
+     * The first character of the name must be a letter or digit,
+     * otherwise " " (a blank string) or a name made only of punctuation becomes a valid input.
+     * The '-' is placed last in the character class so that it is not read as a range.
      */
-    public static final String VALIDATION_REGEX = "[\\p{Alnum}][\\p{Alnum} ]*";
+    public static final String VALIDATION_REGEX = "[\\p{Alnum}][\\p{Alnum} '.,&/()@-]*";
 
     public final String fullName;
 

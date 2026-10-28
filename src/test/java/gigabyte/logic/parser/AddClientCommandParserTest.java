@@ -20,7 +20,10 @@ import static gigabyte.logic.commands.CommandTestUtil.TAG_DESC_FRIEND;
 import static gigabyte.logic.commands.CommandTestUtil.TAG_DESC_HUSBAND;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_ADDRESS_BOB;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_EMAIL_BOB;
+import static gigabyte.logic.commands.CommandTestUtil.VALID_NAMES_WITH_PUNCTUATION;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_NAME_BOB;
+import static gigabyte.logic.commands.CommandTestUtil.VALID_NAME_UPPER_CASE_AL;
+import static gigabyte.logic.commands.CommandTestUtil.VALID_NAME_UPPER_CASE_TA;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_PHONE_BOB;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_TAG_FRIEND;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
@@ -192,5 +195,57 @@ public class AddClientCommandParserTest {
         assertParseFailure(parser, PREAMBLE_NON_EMPTY + NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB
                 + ADDRESS_DESC_BOB + TAG_DESC_HUSBAND + TAG_DESC_FRIEND,
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddClientCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_nameWithAllowedPunctuation_success() {
+        for (String name : VALID_NAMES_WITH_PUNCTUATION) {
+            Client expectedClient = new ClientBuilder(BOB).withName(name).withTags().build();
+            assertParseSuccess(parser, " " + PREFIX_NAME + name + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB,
+                    new AddClientCommand(expectedClient));
+        }
+    }
+
+    @Test
+    public void parse_blankName_failure() {
+        assertParseFailure(parser, " " + PREFIX_NAME + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB,
+                Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_nameStartingWithPunctuation_failure() {
+        assertParseFailure(parser, " " + PREFIX_NAME + "'Brien" + PHONE_DESC_BOB + EMAIL_DESC_BOB
+                + ADDRESS_DESC_BOB, Name.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, " " + PREFIX_NAME + "& Co" + PHONE_DESC_BOB + EMAIL_DESC_BOB
+                + ADDRESS_DESC_BOB, Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_upperCasePrefixInName_parsesFullName() {
+        // Prefixes are matched case-sensitively, so "T/A" and "A/L" stay inside the name
+        Client expectedClient = new ClientBuilder(BOB).withName(VALID_NAME_UPPER_CASE_TA).withTags().build();
+        assertParseSuccess(parser, " " + PREFIX_NAME + VALID_NAME_UPPER_CASE_TA + PHONE_DESC_BOB + EMAIL_DESC_BOB
+                + ADDRESS_DESC_BOB, new AddClientCommand(expectedClient));
+
+        expectedClient = new ClientBuilder(BOB).withName(VALID_NAME_UPPER_CASE_AL).withTags().build();
+        assertParseSuccess(parser, " " + PREFIX_NAME + VALID_NAME_UPPER_CASE_AL + PHONE_DESC_BOB + EMAIL_DESC_BOB
+                + ADDRESS_DESC_BOB, new AddClientCommand(expectedClient));
+    }
+
+    /*
+     * Known limitation: the tokenizer starts a new field at " a/" or " t/" inside a lower-case name.
+     * These tests record the current behaviour. See the User Guide warning on names and titles.
+     */
+    @Test
+    public void parse_lowerCaseAddressPrefixInName_failsWithDuplicateAddress() {
+        assertParseFailure(parser, " " + PREFIX_NAME + "Raj a/l Kumar" + PHONE_DESC_BOB + EMAIL_DESC_BOB
+                + ADDRESS_DESC_BOB, Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ADDRESS));
+    }
+
+    @Test
+    public void parse_lowerCaseTagPrefixInName_splitsNameAndAddsTag() {
+        Client expectedClient = new ClientBuilder(BOB).withName("Lee").withTags("a").build();
+        assertParseSuccess(parser, " " + PREFIX_NAME + "Lee t/a" + PHONE_DESC_BOB + EMAIL_DESC_BOB
+                + ADDRESS_DESC_BOB, new AddClientCommand(expectedClient));
     }
 }

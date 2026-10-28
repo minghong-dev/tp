@@ -35,6 +35,12 @@ public class CommandTestUtil {
     public static final String VALID_ADDRESS_BOB = "Block 123, Bobby Street 3";
     public static final String VALID_TAG_HUSBAND = "husband";
     public static final String VALID_TAG_FRIEND = "friend";
+    /** Real client and business names that contain the punctuation allowed in names. */
+    public static final List<String> VALID_NAMES_WITH_PUNCTUATION = List.of("O'Brien", "Mary-Jane Tan",
+            "Acme Pte. Ltd.", "Smith & Co", "Raj s/o Kumar", "Tan, Lee (Studio) @ Bedok");
+    /** Names that hold a command prefix, written in upper case so that the tokenizer does not split them. */
+    public static final String VALID_NAME_UPPER_CASE_AL = "Raj A/L Kumar";
+    public static final String VALID_NAME_UPPER_CASE_TA = "Lee T/A Shop";
 
     public static final String NAME_DESC_AMY = " " + PREFIX_NAME + VALID_NAME_AMY;
     public static final String NAME_DESC_BOB = " " + PREFIX_NAME + VALID_NAME_BOB;
@@ -47,7 +53,7 @@ public class CommandTestUtil {
     public static final String TAG_DESC_FRIEND = " " + PREFIX_TAG + VALID_TAG_FRIEND;
     public static final String TAG_DESC_HUSBAND = " " + PREFIX_TAG + VALID_TAG_HUSBAND;
 
-    public static final String INVALID_NAME_DESC = " " + PREFIX_NAME + "James&"; // '&' not allowed in names
+    public static final String INVALID_NAME_DESC = " " + PREFIX_NAME + "James*"; // '*' not allowed in names
     public static final String INVALID_PHONE_DESC = " " + PREFIX_PHONE + "911a"; // 'a' not allowed in phones
     public static final String INVALID_EMAIL_DESC = " " + PREFIX_EMAIL + "bob!yahoo"; // missing '@' symbol
     public static final String INVALID_ADDRESS_DESC = " " + PREFIX_ADDRESS; // empty string not allowed for addresses

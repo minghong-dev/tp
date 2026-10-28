@@ -134,6 +134,44 @@ public class EditGigCommandParserTest {
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_FEE));
     }
 
+    @Test
+    public void parse_upperCasePrefixInTitle_editsTitleOnly() {
+        // Prefixes are matched case-sensitively, so upper-case letters stay inside the title
+        for (String title : new String[] {"Lee T/A Shop logo", "Fix S/W bug", "Migrate D/B schema",
+            "Portrait shoot F/2.8"}) {
+            assertParseSuccess(parser, "1 1 t/" + title, new EditGigCommand(FIRST, FIRST,
+                    Optional.of(new GigTitle(title)), Optional.empty(), Optional.empty()));
+        }
+    }
+
+    /*
+     * Known limitation: the tokenizer starts a new field at " t/", " s/", " d/" or " f/" inside a lower-case title.
+     * These tests record the current behaviour. See the User Guide warning on names and titles.
+     */
+    @Test
+    public void parse_lowerCasePrefixInTitle_rejectsInput() {
+        // EP: t/ inside the title repeats the title prefix
+        assertParseFailure(parser, "1 1 t/Lee t/a Shop logo",
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_TITLE));
+
+        // EP: s/ inside the title is always rejected, because editgig does not accept s/
+        assertParseFailure(parser, "1 1 t/Fix s/w bug", usage);
+
+        // EP: d/ inside the title, followed by text that is not a date
+        assertParseFailure(parser, "1 1 t/Migrate d/b schema", Deadline.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_lowerCasePrefixInTitleWithValidValue_alsoEditsThatField() {
+        // EP: f/ inside the title with text that is a valid fee silently edits the fee too
+        assertParseSuccess(parser, "1 1 t/Portrait shoot f/2.8", new EditGigCommand(FIRST, FIRST,
+                Optional.of(new GigTitle("Portrait shoot")), Optional.empty(), Optional.of(new Fee("2.8"))));
+
+        // EP: d/ inside the title, followed by a valid date, silently edits the deadline too
+        assertParseSuccess(parser, "1 1 t/Launch d/2027-04-30", new EditGigCommand(FIRST, FIRST,
+                Optional.of(new GigTitle("Launch")), Optional.of(new Deadline("2027-04-30")), Optional.empty()));
+    }
+
     /** Asserts that {@code invalidIndex} is rejected as both the client index and the gig index. */
     private void assertInvalidIndexRejected(String invalidIndex) {
         assertParseFailure(parser, invalidIndex + " 1 t/Website", usage);

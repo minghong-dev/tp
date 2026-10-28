@@ -79,7 +79,50 @@
 * Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
 
+* A prefix such as `a/` or `t/` starts a new parameter wherever it follows a space, even inside a name or gig title.
+  To keep it as part of the name or title, write it in upper case, for example `n/Raj A/L Kumar`.
+  See [Names and titles that contain a prefix](#names-and-titles-that-contain-a-prefix).
+
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
+</box>
+
+### Names and titles that contain a prefix
+
+Gigabyte reads a prefix of the current command (such as `a/` in `add`, or `f/` in `addgig`) as the start of a new
+parameter wherever it follows a space, even in the middle of a client name or gig title. Prefixes are matched
+case-sensitively, so writing the letters in upper case keeps them in the name or title.
+
+<box type="warning" seamless>
+
+**Caution: inside a name or title, write these prefixes in upper case.**
+
+Command | Prefixes that split the value | Write instead
+--------|-------------------------------|--------------
+`add`, `edit` (client name) | `a/` and `t/`, as in `a/l`, `a/p` or `t/a` | `n/Raj A/L Kumar`, `n/Lee T/A Shop`
+`addgig`, `editgig` (gig title) | `t/`, `s/`, `d/` and `f/`, as in `s/w`, `d/b` or `f/2.8` | `t/Fix S/W bug`, `t/Portrait shoot F/2.8`
+
+`s/o` and `d/o` are safe in client names, because `add` and `edit` have no `s/` or `d/` prefix.
+
+What happens if you write the prefix in lower case:
+
+* `edit 1 n/Raj a/l Kumar` is **saved without an error**. The name becomes `Raj` and the address is replaced
+  with `l Kumar`.
+* `edit 1 n/Lee t/a` is **saved without an error**. The name becomes `Lee` and all existing tags are replaced
+  with the single tag `a`.
+* `add n/Lee t/a p/98765432 e/lee@example.com a/1 Main Street` is **saved without an error** as a client named
+  `Lee` with the tag `a`.
+* `add n/Raj a/l Kumar p/98765432 e/raj@example.com a/1 Main Street` is rejected with the error
+  `Multiple values specified for the following single-valued field(s): a/`. Nothing is saved.
+* In `addgig` and `editgig`, a `t/` inside the title is rejected as a repeated `t/`.
+* In `addgig`, an `s/`, `d/` or `f/` inside the title is usually rejected as a repeated or invalid parameter. If you
+  left that parameter out and the text after it is a valid value, it **fills that parameter without an error**:
+  `addgig 1 t/Portrait shoot f/2.8 s/NOT_STARTED d/2027-01-31` saves the title `Portrait shoot` with a fee of `$2.80`.
+* In `editgig`, an `s/` inside the title is always rejected with the command-format error, because `editgig` does
+  not accept `s/`. A `d/` or `f/` followed by a valid value **also edits that field without an error**:
+  `editgig 1 1 t/Portrait shoot f/2.8` sets the title to `Portrait shoot` and the fee to `$2.80`.
+
+If a record was changed this way, run `edit` or `editgig` again with the upper-case form, and re-enter any address,
+tags, deadline or fee that was overwritten.
 </box>
 
 ### Viewing help: `help`
@@ -97,7 +140,17 @@ Adds a client to the client list.
 
 Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]... `
 
+* `NAME` must start with a letter (A–Z, a–z) or digit. After that, it can contain letters, digits, spaces and these
+  characters: `'` `-` `.` `,` `&` `/` `(` `)` `@`.
+  For example, `O'Brien`, `Mary-Jane Tan`, `Acme Pte. Ltd.`, `Smith & Co` and `Raj s/o Kumar` are all accepted.
 * Each `TAG` must contain only letters and digits (no spaces or symbols) and be at most 25 characters long.
+
+<box type="warning" seamless>
+
+**Caution:** Inside a name, write `a/` and `t/` in upper case, for example `n/Raj A/L Kumar` or `n/Lee T/A Shop`.
+In lower case, `n/Raj a/l Kumar` is rejected, and `n/Lee t/a` is **saved without an error** as the name `Lee`
+with the tag `a`. See [Names and titles that contain a prefix](#names-and-titles-that-contain-a-prefix).
+</box>
 
 <box type="tip" seamless>
 
@@ -228,6 +281,15 @@ Format: `addgig INDEX t/TITLE s/STATUS d/DEADLINE f/FEE`
   unchanged, including when it is filtered.
 * Gigs, including their titles, are retained after restarting the app. Every saved gig must have a valid title.
 
+<box type="warning" seamless>
+
+**Caution:** Inside a title, write `t/`, `s/`, `d/` and `f/` in upper case, for example `t/Fix S/W bug` or
+`t/Portrait shoot F/2.8`. In lower case, they start a new parameter. The command is usually rejected, but if you left
+that parameter out and the text after it is a valid value, it **fills that parameter without an error**:
+`addgig 1 t/Portrait shoot f/2.8 s/NOT_STARTED d/2027-01-31` saves the title `Portrait shoot` with a fee of `$2.80`.
+See [Names and titles that contain a prefix](#names-and-titles-that-contain-a-prefix).
+</box>
+
 Successful examples:
 
 * `addgig 1 t/Website redesign s/NOT_STARTED d/2027-01-31 f/1250.00`
@@ -263,6 +325,15 @@ Format: `editgig CLIENT_INDEX GIG_INDEX [t/TITLE] [d/DEADLINE] [f/FEE]`
   edits that would leave the gig unchanged are rejected without changing records.
 * Client and status views refresh immediately. Changing a deadline reorders the deadline overview; changing a title
   can also change the order when deadlines are equal. Both indexes are resolved before the edit is applied.
+
+<box type="warning" seamless>
+
+**Caution:** Inside a title, write `t/`, `s/`, `d/` and `f/` in upper case, for example
+`editgig 1 2 t/Portrait shoot F/2.8`. In lower case, a `t/` or `s/` inside the title is rejected, and a `d/` or `f/`
+followed by a valid value **edits that field without an error**: `editgig 1 2 t/Portrait shoot f/2.8` sets the
+title to `Portrait shoot` and the fee to `$2.80`.
+See [Names and titles that contain a prefix](#names-and-titles-that-contain-a-prefix).
+</box>
 
 Examples: `editgig 1 2 t/Updated landing page`, `editgig 1 2 d/2027-04-30 f/1800.00`.
 After `find Bernice`, `editgig 1 1 t/Revised branding` edits the first matching client's first gig.
@@ -513,9 +584,21 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]... `
 * Edits the client at the specified `INDEX`. The index refers to the index number shown in the displayed client list. The index **must be a positive integer** 1, 2, 3, ...
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
+* `NAME` follows the same rules as in [`add`](#adding-a-client-add).
 * When editing tags, all of the client's existing tags are removed; adding tags is not cumulative.
   Each tag follows the same rules as in [`add`](#adding-a-client-add).
 * To remove all of a client's tags, enter `t/` without a tag after it.
+
+<box type="warning" seamless>
+
+**Caution:** Inside a name, write `a/` and `t/` in upper case: `edit 1 n/Raj A/L Kumar` changes only the name.
+In lower case, the edit is **saved without an error** and also changes other fields:
+
+* `edit 1 n/Raj a/l Kumar` sets the name to `Raj` and replaces the address with `l Kumar`.
+* `edit 1 n/Lee t/a` sets the name to `Lee` and replaces all existing tags with `a`.
+
+See [Names and titles that contain a prefix](#names-and-titles-that-contain-a-prefix).
+</box>
 
 Examples:
 * `edit 1 p/91234567 e/alexnew@example.com` changes Alex's phone and email in fresh sample data.
@@ -653,6 +736,10 @@ supported.
    file and convert it before issuing a command in v1.4.
 1. **Saving is not atomic.** A failed disk write can leave the destination file incomplete. Keep an external backup
    before large or destructive changes.
+1. **A lower-case prefix inside a name or gig title is read as a separate parameter.** For example,
+   `edit 1 n/Raj a/l Kumar` is saved without an error but also replaces the client's address, and `edit 1 n/Lee t/a`
+   replaces the client's tags. Write the prefix in upper case instead (`n/Raj A/L Kumar`). See
+   [Names and titles that contain a prefix](#names-and-titles-that-contain-a-prefix) for every affected command.
 
 --------------------------------------------------------------------------------------------------------------------
 

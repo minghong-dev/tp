@@ -17,13 +17,17 @@ import static gigabyte.logic.commands.CommandTestUtil.TAG_DESC_FRIEND;
 import static gigabyte.logic.commands.CommandTestUtil.TAG_DESC_HUSBAND;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_ADDRESS_AMY;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_EMAIL_AMY;
+import static gigabyte.logic.commands.CommandTestUtil.VALID_NAMES_WITH_PUNCTUATION;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_NAME_AMY;
+import static gigabyte.logic.commands.CommandTestUtil.VALID_NAME_UPPER_CASE_AL;
+import static gigabyte.logic.commands.CommandTestUtil.VALID_NAME_UPPER_CASE_TA;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_PHONE_AMY;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_PHONE_BOB;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_TAG_FRIEND;
 import static gigabyte.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static gigabyte.logic.parser.CliSyntax.PREFIX_ADDRESS;
 import static gigabyte.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static gigabyte.logic.parser.CliSyntax.PREFIX_NAME;
 import static gigabyte.logic.parser.CliSyntax.PREFIX_PHONE;
 import static gigabyte.logic.parser.CliSyntax.PREFIX_TAG;
 import static gigabyte.logic.parser.CommandParserTestUtil.assertParseFailure;
@@ -204,5 +208,50 @@ public class EditClientCommandParserTest {
         EditClientCommand expectedCommand = new EditClientCommand(targetIndex, descriptor);
 
         assertParseSuccess(parser, userInput, expectedCommand);
+    }
+
+    @Test
+    public void parse_nameWithAllowedPunctuation_success() {
+        for (String name : VALID_NAMES_WITH_PUNCTUATION) {
+            EditClientDescriptor descriptor = new EditClientDescriptorBuilder().withName(name).build();
+            assertParseSuccess(parser, "1 " + PREFIX_NAME + name,
+                    new EditClientCommand(INDEX_FIRST_CLIENT, descriptor));
+        }
+    }
+
+    @Test
+    public void parse_nameStartingWithPunctuation_failure() {
+        assertParseFailure(parser, "1 " + PREFIX_NAME + "-Jane", Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_upperCasePrefixInName_editsNameOnly() {
+        // Prefixes are matched case-sensitively, so "A/L" and "T/A" stay inside the name
+        EditClientDescriptor descriptor = new EditClientDescriptorBuilder().withName(VALID_NAME_UPPER_CASE_AL).build();
+        assertParseSuccess(parser, "1 " + PREFIX_NAME + VALID_NAME_UPPER_CASE_AL,
+                new EditClientCommand(INDEX_FIRST_CLIENT, descriptor));
+
+        descriptor = new EditClientDescriptorBuilder().withName(VALID_NAME_UPPER_CASE_TA).build();
+        assertParseSuccess(parser, "1 " + PREFIX_NAME + VALID_NAME_UPPER_CASE_TA,
+                new EditClientCommand(INDEX_FIRST_CLIENT, descriptor));
+    }
+
+    /*
+     * Known limitation: the tokenizer starts a new field at " a/" or " t/" inside a lower-case name.
+     * These tests record the current behaviour. See the User Guide warning on names and titles.
+     */
+    @Test
+    public void parse_lowerCaseAddressPrefixInName_editsNameAndAddress() {
+        EditClientDescriptor descriptor = new EditClientDescriptorBuilder().withName("Raj")
+                .withAddress("l Kumar").build();
+        assertParseSuccess(parser, "1 " + PREFIX_NAME + "Raj a/l Kumar",
+                new EditClientCommand(INDEX_FIRST_CLIENT, descriptor));
+    }
+
+    @Test
+    public void parse_lowerCaseTagPrefixInName_editsNameAndReplacesTags() {
+        EditClientDescriptor descriptor = new EditClientDescriptorBuilder().withName("Lee").withTags("a").build();
+        assertParseSuccess(parser, "1 " + PREFIX_NAME + "Lee t/a",
+                new EditClientCommand(INDEX_FIRST_CLIENT, descriptor));
     }
 }

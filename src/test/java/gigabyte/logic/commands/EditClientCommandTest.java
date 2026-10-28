@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Test;
 import gigabyte.commons.core.index.Index;
 import gigabyte.logic.Messages;
 import gigabyte.logic.commands.EditClientCommand.EditClientDescriptor;
+import gigabyte.logic.parser.EditClientCommandParser;
+import gigabyte.logic.parser.exceptions.ParseException;
 import gigabyte.model.GigabyteData;
 import gigabyte.model.Model;
 import gigabyte.model.ModelManager;
@@ -158,6 +160,38 @@ public class EditClientCommandTest {
     }
 
     @Test
+    public void execute_upperCasePrefixInName_editsNameOnly() throws Exception {
+        // Prefixes are matched case-sensitively, so "A/L" stays inside the name
+        Client clientToEdit = model.getFilteredClientList().get(INDEX_SECOND_CLIENT.getZeroBased());
+        Client editedClient = new ClientBuilder(clientToEdit).withName("Raj A/L Kumar").build();
+
+        assertEditSuccess("2 n/Raj A/L Kumar", clientToEdit, editedClient);
+        Client clientAfterEdit = model.getFilteredClientList().get(INDEX_SECOND_CLIENT.getZeroBased());
+        assertEquals(clientToEdit.getAddress(), clientAfterEdit.getAddress());
+        assertEquals(clientToEdit.getTags(), clientAfterEdit.getTags());
+    }
+
+    /*
+     * Known limitation: the tokenizer starts a new field at " a/" or " t/" inside a lower-case name,
+     * and the edit is saved without an error. See the User Guide warning on names and titles.
+     */
+    @Test
+    public void execute_lowerCaseAddressPrefixInName_alsoReplacesAddress() throws Exception {
+        Client clientToEdit = model.getFilteredClientList().get(INDEX_SECOND_CLIENT.getZeroBased());
+        Client editedClient = new ClientBuilder(clientToEdit).withName("Raj").withAddress("l Kumar").build();
+
+        assertEditSuccess("2 n/Raj a/l Kumar", clientToEdit, editedClient);
+    }
+
+    @Test
+    public void execute_lowerCaseTagPrefixInName_alsoReplacesTags() throws Exception {
+        Client clientToEdit = model.getFilteredClientList().get(INDEX_SECOND_CLIENT.getZeroBased());
+        Client editedClient = new ClientBuilder(clientToEdit).withName("Lee").withTags("a").build();
+
+        assertEditSuccess("2 n/Lee t/a", clientToEdit, editedClient);
+    }
+
+    @Test
     public void equals() {
         final EditClientCommand standardCommand = new EditClientCommand(INDEX_FIRST_CLIENT, DESC_AMY);
 
@@ -190,6 +224,23 @@ public class EditClientCommandTest {
         String expected = EditClientCommand.class.getCanonicalName() + "{index=" + index + ", editClientDescriptor="
                 + editClientDescriptor + "}";
         assertEquals(expected, editCommand.toString());
+    }
+
+    /**
+     * Parses {@code arguments} as an {@code edit} command, executes it on {@code model}, and confirms that
+     * {@code clientToEdit} is replaced by {@code editedClient}.
+     */
+    private void assertEditSuccess(String arguments, Client clientToEdit, Client editedClient)
+            throws ParseException {
+        EditClientCommand editCommand = new EditClientCommandParser().parse(arguments);
+
+        String expectedMessage = String.format(EditClientCommand.MESSAGE_EDIT_CLIENT_SUCCESS,
+                Messages.format(editedClient));
+
+        Model expectedModel = new ModelManager(new GigabyteData(model.getGigabyteData()), new UserPrefs());
+        expectedModel.setClient(clientToEdit, editedClient);
+
+        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
     }
 
 }

@@ -133,4 +133,44 @@ public class AddGigCommandParserTest {
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_DEADLINE));
         assertParseFailure(parser, valid + " f/200", Messages.getErrorMessageForDuplicatePrefixes(PREFIX_FEE));
     }
+
+    @Test
+    public void parse_upperCasePrefixInTitle_parsesFullTitle() {
+        // Prefixes are matched case-sensitively, so upper-case letters stay inside the title
+        for (String title : new String[] {"Lee T/A Shop logo", "Fix S/W bug", "Migrate D/B schema",
+            "Portrait shoot F/2.8"}) {
+            assertParseSuccess(parser, "1 t/" + title + " s/NOT_STARTED d/2027-01-31 f/100",
+                    new AddGigCommand(INDEX_FIRST_CLIENT, new GigTitle(title), GigStatus.NOT_STARTED,
+                            new Deadline("2027-01-31"), new Fee("100")));
+        }
+    }
+
+    /*
+     * Known limitation: the tokenizer starts a new field at " t/", " s/", " d/" or " f/" inside a lower-case title.
+     * These tests record the current behaviour. See the User Guide warning on names and titles.
+     */
+    @Test
+    public void parse_lowerCasePrefixInTitleWithSeparatePrefix_failsWithDuplicatePrefix() {
+        assertParseFailure(parser, "1 t/Lee t/a Shop logo s/NOT_STARTED d/2027-01-31 f/100",
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_TITLE));
+        assertParseFailure(parser, "1 t/Fix s/w bug s/NOT_STARTED d/2027-01-31 f/100",
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_STATUS));
+        assertParseFailure(parser, "1 t/Migrate d/b schema s/NOT_STARTED d/2027-01-31 f/100",
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_DEADLINE));
+        assertParseFailure(parser, "1 t/Portrait shoot f/2.8 s/NOT_STARTED d/2027-01-31 f/100",
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_FEE));
+    }
+
+    @Test
+    public void parse_lowerCasePrefixInTitleWithInvalidValue_failsWithFieldConstraint() {
+        assertParseFailure(parser, "1 t/Fix s/w bug d/2027-01-31 f/100", GigStatus.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 t/Migrate d/b schema s/NOT_STARTED f/100", Deadline.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_lowerCasePrefixInTitleWithValidValue_fillsField() {
+        assertParseSuccess(parser, "1 t/Portrait shoot f/2.8 s/NOT_STARTED d/2027-01-31",
+                new AddGigCommand(INDEX_FIRST_CLIENT, new GigTitle("Portrait shoot"), GigStatus.NOT_STARTED,
+                        new Deadline("2027-01-31"), new Fee("2.8")));
+    }
 }

@@ -26,6 +26,21 @@
    A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
    ![Ui](images/Ui.png)
 
+1. Browse the sample data with the keyboard. The app starts with the cursor in the command box.
+
+   * Press **Tab** to move to the **Clients** list. The first client is selected, and its gigs appear in the
+     **Gigs** panel.
+
+   * Press **Up** and **Down** to select another client.
+
+   * Press **Right** to move to that client's gigs, then **Up** and **Down** to select a gig. Its payments appear in
+     the **Payment obligations** panel below.
+
+   * Press **Left** to go back to Clients, or **Tab** to return to the command box.
+
+   You can also click a client or gig to select it. See
+   [Viewing gigs and payment obligations](#viewing-gigs-and-payment-obligations) for details.
+
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Some example commands you can try:
 
